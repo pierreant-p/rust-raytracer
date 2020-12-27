@@ -1,0 +1,39 @@
+use std::io::{self, Write};
+
+fn main() -> io::Result<()> {
+    let image_width = 256;
+    let image_height = 256;
+
+    let stdout = io::stdout();
+    let mut stdout_hdl = stdout.lock();
+    let stderr = io::stderr();
+    let mut stderr_hdl = stderr.lock();
+
+    let line = format!("P3\n{} {} \n255\n", image_width, image_height);
+    stdout_hdl.write(&line.into_bytes())?;
+
+    for j in (0..image_height).rev() {
+        let msg = format!("Scanlines remaining: {}\n", j);
+        stderr_hdl.write(&msg.into_bytes())?;
+        stderr_hdl.flush()?;
+
+        for i in 0..image_width {
+            let r = i as f64 / (image_width as f64 - 1.0);
+            let g = j as f64 / (image_height as f64 - 1.0);
+            let b = 0.25;
+
+            let ir = (255.99 * r) as i32;
+            let ig = (255.99 * g) as i32;
+            let ib = (255.99 * b) as i32;
+
+            let line = format!("{} {} {}", ir, ig, ib);
+            stdout_hdl.write(&line.into_bytes())?;
+        }
+    }
+
+    stdout_hdl.flush()?;
+    stderr_hdl.write(b"Done\n")?;
+    stderr_hdl.flush()?;
+
+    Ok(())
+}
