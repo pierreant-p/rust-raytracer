@@ -1,7 +1,8 @@
 use std::io::{self, Write};
 
+mod color;
 mod vec3;
-use vec3::Vec3;
+use color::Color;
 
 fn main() -> io::Result<()> {
     let image_width = 256;
@@ -21,7 +22,7 @@ fn main() -> io::Result<()> {
         stderr_hdl.flush()?;
 
         for i in 0..image_width {
-            let color = Vec3::new(
+            let color = Color::new(
                 i as f64 / (image_width as f64 - 1.0),
                 j as f64 / (image_height as f64 - 1.0),
                 0.25,
