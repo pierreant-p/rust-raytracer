@@ -1,3 +1,4 @@
+use std::io::{self, Write};
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
 pub struct Vec3 {
@@ -33,6 +34,18 @@ impl Vec3 {
             y: self.z * other.x - self.x * other.z,
             z: self.x * other.y - self.y * other.x,
         }
+    }
+
+    pub fn write_color(&self, stdout: &mut io::StdoutLock) -> io::Result<()> {
+        let ir = (255.99 * self.x) as i32;
+        let ig = (255.99 * self.y) as i32;
+        let ib = (255.99 * self.z) as i32;
+
+        let line = format!("{} {} {}\n", ir, ig, ib);
+
+        stdout.write(&line.into_bytes())?;
+
+        Ok(())
     }
 }
 

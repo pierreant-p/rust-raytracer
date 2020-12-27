@@ -1,5 +1,8 @@
 use std::io::{self, Write};
 
+mod vec3;
+use vec3::Vec3;
+
 fn main() -> io::Result<()> {
     let image_width = 256;
     let image_height = 256;
@@ -18,16 +21,12 @@ fn main() -> io::Result<()> {
         stderr_hdl.flush()?;
 
         for i in 0..image_width {
-            let r = i as f64 / (image_width as f64 - 1.0);
-            let g = j as f64 / (image_height as f64 - 1.0);
-            let b = 0.25;
-
-            let ir = (255.99 * r) as i32;
-            let ig = (255.99 * g) as i32;
-            let ib = (255.99 * b) as i32;
-
-            let line = format!("{} {} {}", ir, ig, ib);
-            stdout_hdl.write(&line.into_bytes())?;
+            let color = Vec3::new(
+                i as f64 / (image_width as f64 - 1.0),
+                j as f64 / (image_height as f64 - 1.0),
+                0.25,
+            );
+            color.write_color(&mut stdout_hdl)?;
         }
     }
 
