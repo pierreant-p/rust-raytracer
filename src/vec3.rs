@@ -1,6 +1,7 @@
 use std::io::{self, Write};
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
+#[derive(Debug, Copy, Clone)]
 pub struct Vec3 {
     pub x: f64,
     pub y: f64,
@@ -20,7 +21,7 @@ impl Vec3 {
         self.length_squared().sqrt()
     }
 
-    pub fn unit_vector(&self) -> Vec3 {
+    pub fn unit_vector(self) -> Vec3 {
         self / self.length()
     }
 
@@ -49,10 +50,10 @@ impl Vec3 {
     }
 }
 
-impl Add for &Vec3 {
+impl Add for Vec3 {
     type Output = Vec3;
 
-    fn add(self, other: &Vec3) -> Vec3 {
+    fn add(self, other: Vec3) -> Vec3 {
         Vec3 {
             x: self.x + other.x,
             y: self.y + other.y,
@@ -61,10 +62,10 @@ impl Add for &Vec3 {
     }
 }
 
-impl Sub for &Vec3 {
+impl Sub for Vec3 {
     type Output = Vec3;
 
-    fn sub(self, other: &Vec3) -> Vec3 {
+    fn sub(self, other: Vec3) -> Vec3 {
         Vec3 {
             x: self.x - other.x,
             y: self.y - other.y,
@@ -73,7 +74,7 @@ impl Sub for &Vec3 {
     }
 }
 
-impl Neg for &Vec3 {
+impl Neg for Vec3 {
     type Output = Vec3;
 
     fn neg(self) -> Vec3 {
@@ -85,7 +86,7 @@ impl Neg for &Vec3 {
     }
 }
 
-impl Mul<f64> for &Vec3 {
+impl Mul<f64> for Vec3 {
     type Output = Vec3;
 
     fn mul(self, k: f64) -> Vec3 {
@@ -109,7 +110,7 @@ impl Mul<Vec3> for f64 {
     }
 }
 
-impl Div<f64> for &Vec3 {
+impl Div<f64> for Vec3 {
     type Output = Vec3;
 
     fn div(self, k: f64) -> Vec3 {
@@ -121,6 +122,9 @@ impl Div<f64> for &Vec3 {
     }
 }
 
+pub type Color = Vec3;
+pub type Point = Vec3;
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -129,7 +133,7 @@ mod tests {
     fn test_add() {
         let v1 = Vec3::new(1.0, 2.0, 3.0);
         let v2 = Vec3::new(4.0, 5.0, 6.0);
-        let v3 = &v1 + &v2;
+        let v3 = v1 + v2;
         assert_eq!(v3.x, 5.0);
         assert_eq!(v3.y, 7.0);
         assert_eq!(v3.z, 9.0);
@@ -139,7 +143,7 @@ mod tests {
     fn test_sub() {
         let v1 = Vec3::new(1.0, 2.0, 3.0);
         let v2 = Vec3::new(4.0, 1.0, 4.0);
-        let v3 = &v1 - &v2;
+        let v3 = v1 - v2;
         assert_eq!(v3.x, -3.0);
         assert_eq!(v3.y, 1.0);
         assert_eq!(v3.z, -1.0);
@@ -148,7 +152,7 @@ mod tests {
     #[test]
     fn test_neg() {
         let v1 = Vec3::new(1.0, 2.0, 3.0);
-        let v3 = -&v1;
+        let v3 = -v1;
         assert_eq!(v3.x, -1.0);
         assert_eq!(v3.y, -2.0);
         assert_eq!(v3.z, -3.0);
@@ -158,7 +162,7 @@ mod tests {
     fn test_mul_vec3() {
         let v1 = Vec3::new(1.0, 2.0, 3.0);
         let k = 3.0;
-        let v3 = &v1 * k;
+        let v3 = v1 * k;
         assert_eq!(v3.x, 3.0);
         assert_eq!(v3.y, 6.0);
         assert_eq!(v3.z, 9.0);
@@ -178,7 +182,7 @@ mod tests {
     fn test_div_f64() {
         let v1 = Vec3::new(1.0, 2.0, 3.0);
         let k = 2.0;
-        let v3 = &v1 / k;
+        let v3 = v1 / k;
         assert_eq!(v3.x, 0.5);
         assert_eq!(v3.y, 1.0);
         assert_eq!(v3.z, 1.5);
