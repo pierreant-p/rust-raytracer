@@ -64,3 +64,31 @@ impl Hittable for Sphere {
         Some(hit_record)
     }
 }
+
+pub struct HittableList {
+    pub objects: Vec<Box<dyn Hittable>>,
+}
+
+impl HittableList {
+    pub fn new() -> Self {
+        HittableList {
+            objects: Vec::new(),
+        }
+    }
+}
+
+impl Hittable for HittableList {
+    fn hit(&self, r: Ray, t_min: f64, t_max: f64) -> Option<HitRecord> {
+        let mut record = None;
+        let mut closest_so_far = t_max;
+
+        for obj in self.objects.iter() {
+            if let Some(hit_record) = obj.hit(r, t_min, closest_so_far) {
+                closest_so_far = hit_record.t;
+                record = Some(hit_record);
+            }
+        }
+
+        record
+    }
+}

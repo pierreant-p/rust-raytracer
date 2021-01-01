@@ -3,17 +3,12 @@ use std::io::{self, Write};
 mod hittable;
 mod ray;
 mod vec3;
-use hittable::{Hittable, Sphere};
+use hittable::{Hittable, HittableList, Sphere};
 use ray::Ray;
 use vec3::{Color, Point};
 
-fn ray_color(r: Ray) -> Color {
-    let sphere = Sphere {
-        center: Point::new(0.0, 0.0, -1.0),
-        radius: 0.5,
-    };
-
-    match sphere.hit(r, 0.0, f64::INFINITY) {
+fn ray_color(r: Ray, world: &HittableList) -> Color {
+    match world.hit(r, 0.0, f64::INFINITY) {
         Some(hit_record) => {
             let normal = hit_record.normal;
 
@@ -33,6 +28,19 @@ fn main() -> io::Result<()> {
     let aspect_ratio = 16.0 / 9.0;
     let image_width = 400;
     let image_height = ((image_width as f64) / aspect_ratio) as i32;
+
+    // World
+    let mut world = HittableList::new();
+    let sphere1 = Sphere {
+        center: Point::new(0.0, 0.0, -1.0),
+        radius: 0.5,
+    };
+    world.objects.push(Box::new(sphere1));
+    let sphere2 = Sphere {
+        center: Point::new(0.0, -100.5, -1.0),
+        radius: 100.0,
+    };
+    world.objects.push(Box::new(sphere2));
 
     // Camera
     let viewport_height = 2.0;
@@ -66,7 +74,7 @@ fn main() -> io::Result<()> {
                 origin,
                 dir: lower_left_corner + u * horizontal + v * vertical - origin,
             };
-            let color = ray_color(ray);
+            let color = ray_color(ray, &world);
             color.write_color(&mut stdout_hdl)?;
         }
     }
