@@ -1,34 +1,31 @@
 use std::io::{self, Write};
 
+mod hittable;
 mod ray;
 mod vec3;
+use hittable::{Hittable, Sphere};
 use ray::Ray;
-use vec3::{Color, Point, Vec3};
-
-fn hit_sphere(center: Point, radius: f64, r: Ray) -> f64 {
-    let oc = r.origin - center;
-    let a = r.dir.length_squared();
-    let half_b = oc.dot(&r.dir);
-    let c = oc.length_squared() - radius * radius;
-    let discriminat = half_b * half_b - a * c;
-
-    if discriminat < 0.0 {
-        return -1.0;
-    } else {
-        return (-half_b - discriminat.sqrt()) / a;
-    }
-}
+use vec3::{Color, Point};
 
 fn ray_color(r: Ray) -> Color {
-    let t = hit_sphere(Point::new(0.0, 0.0, -1.0), 0.5, r);
-    if t > 0.0 {
-        let normal = (r.point_at(t) - Vec3::new(0.0, 0.0, -1.0)).unit_vector();
-        return 0.5 * Color::new(normal.x + 1.0, normal.y + 1.0, normal.z + 1.0);
-    }
-    let unit_direction = r.dir.unit_vector();
-    let t = 0.5 * (unit_direction.y + 1.0);
+    let sphere = Sphere {
+        center: Point::new(0.0, 0.0, -1.0),
+        radius: 0.5,
+    };
 
-    (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
+    match sphere.hit(r, 0.0, f64::INFINITY) {
+        Some(hit_record) => {
+            let normal = hit_record.normal;
+
+            0.5 * Color::new(normal.x + 1.0, normal.y + 1.0, normal.z + 1.0)
+        }
+        None => {
+            let unit_direction = r.dir.unit_vector();
+            let t = 0.5 * (unit_direction.y + 1.0);
+
+            (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
+        }
+    }
 }
 
 fn main() -> io::Result<()> {
@@ -66,7 +63,7 @@ fn main() -> io::Result<()> {
             let u = i as f64 / (image_width as f64 - 1.0);
             let v = j as f64 / (image_height as f64 - 1.0);
             let ray = Ray {
-                origin: origin,
+                origin,
                 dir: lower_left_corner + u * horizontal + v * vertical - origin,
             };
             let color = ray_color(ray);
