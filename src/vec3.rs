@@ -1,5 +1,6 @@
+use crate::utils::clamp;
 use std::io::{self, Write};
-use std::ops::{Add, Div, Mul, Neg, Sub};
+use std::ops::{Add, AddAssign, Div, Mul, Neg, Sub};
 
 #[derive(Debug, Copy, Clone)]
 pub struct Vec3 {
@@ -37,10 +38,21 @@ impl Vec3 {
         }
     }
 
-    pub fn write_color(&self, stdout: &mut io::StdoutLock) -> io::Result<()> {
-        let ir = (255.99 * self.x) as i32;
-        let ig = (255.99 * self.y) as i32;
-        let ib = (255.99 * self.z) as i32;
+    pub fn write_color(
+        &self,
+        stdout: &mut io::StdoutLock,
+        samples_per_pixel: i32,
+    ) -> io::Result<()> {
+        // Divide the color by the number of samples
+        let scale = 1.0 / (samples_per_pixel as f64);
+
+        let r = self.x * scale;
+        let g = self.y * scale;
+        let b = self.z * scale;
+
+        let ir = (256.0 * clamp(r, 0.0, 0.999)) as i32;
+        let ig = (256.0 * clamp(g, 0.0, 0.999)) as i32;
+        let ib = (256.0 * clamp(b, 0.0, 0.999)) as i32;
 
         let line = format!("{} {} {}\n", ir, ig, ib);
 
@@ -59,6 +71,14 @@ impl Add for Vec3 {
             y: self.y + other.y,
             z: self.z + other.z,
         }
+    }
+}
+
+impl AddAssign for Vec3 {
+    fn add_assign(&mut self, other: Self) {
+        self.x += other.x;
+        self.y += other.y;
+        self.z += other.z;
     }
 }
 
@@ -137,6 +157,16 @@ mod tests {
         assert_eq!(v3.x, 5.0);
         assert_eq!(v3.y, 7.0);
         assert_eq!(v3.z, 9.0);
+    }
+
+    #[test]
+    fn test_add_assign() {
+        let mut v1 = Vec3::new(1.0, 2.0, 3.0);
+        let v2 = Vec3::new(4.0, 5.0, 6.0);
+        v1 += v2;
+        assert_eq!(v1.x, 5.0);
+        assert_eq!(v1.y, 7.0);
+        assert_eq!(v1.z, 9.0);
     }
 
     #[test]

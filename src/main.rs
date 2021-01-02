@@ -1,8 +1,14 @@
+use indicatif::{ProgressBar, ProgressStyle};
+use rand::Rng;
 use std::io::{self, Write};
 
+mod camera;
 mod hittable;
 mod ray;
+mod utils;
 mod vec3;
+
+use camera::Camera;
 use hittable::{Hittable, HittableList, Sphere};
 use ray::Ray;
 use vec3::{Color, Point};
@@ -28,6 +34,7 @@ fn main() -> io::Result<()> {
     let aspect_ratio = 16.0 / 9.0;
     let image_width = 400;
     let image_height = ((image_width as f64) / aspect_ratio) as i32;
+    let samples_per_pixel = 10;
 
     // World
     let mut world = HittableList::new();
@@ -43,15 +50,21 @@ fn main() -> io::Result<()> {
     world.objects.push(Box::new(sphere2));
 
     // Camera
-    let viewport_height = 2.0;
-    let viewport_width = aspect_ratio * viewport_height;
-    let focal_length = 1.0;
+    let camera = Camera::new();
 
-    let origin = Point::new(0.0, 0.0, 0.0);
-    let horizontal = Point::new(viewport_width, 0.0, 0.0);
-    let vertical = Point::new(0.0, viewport_height, 0.0);
-    let lower_left_corner =
-        origin - horizontal / 2.0 - vertical / 2.0 - Point::new(0.0, 0.0, focal_length);
+    // Random
+    let mut rng = rand::thread_rng();
+
+    // Progress bar
+    let nb_steps = image_width * image_height * samples_per_pixel;
+    let progress = ProgressBar::new(nb_steps as u64);
+    progress.set_style(
+        ProgressStyle::default_bar()
+            .template(
+                "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} samples (ETA: {eta})",
+            )
+            .progress_chars("#>-"),
+    );
 
     // Render
     let stdout = io::stdout();
@@ -63,23 +76,26 @@ fn main() -> io::Result<()> {
     stdout_hdl.write(&line.into_bytes())?;
 
     for j in (0..image_height).rev() {
-        let msg = format!("Scanlines remaining: {}\n", j);
-        stderr_hdl.write(&msg.into_bytes())?;
-        stderr_hdl.flush()?;
-
         for i in 0..image_width {
-            let u = i as f64 / (image_width as f64 - 1.0);
-            let v = j as f64 / (image_height as f64 - 1.0);
-            let ray = Ray {
-                origin,
-                dir: lower_left_corner + u * horizontal + v * vertical - origin,
-            };
-            let color = ray_color(ray, &world);
-            color.write_color(&mut stdout_hdl)?;
+            let mut color = Color::new(0.0, 0.0, 0.0);
+            for _s in 0..samples_per_pixel {
+                let randu: f64 = rng.gen();
+                let randv: f64 = rng.gen();
+                let u = (i as f64 + randu) / (image_width as f64 - 1.0);
+                let v = (j as f64 + randv) / (image_height as f64 - 1.0);
+                let ray = camera.get_ray(u, v);
+                let sample_color = ray_color(ray, &world);
+                color += sample_color;
+                progress.inc(1);
+            }
+            color.write_color(&mut stdout_hdl, samples_per_pixel)?;
         }
     }
 
     stdout_hdl.flush()?;
+
+    progress.finish();
+
     stderr_hdl.write(b"Done\n")?;
     stderr_hdl.flush()?;
 
