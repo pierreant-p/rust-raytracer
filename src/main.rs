@@ -11,14 +11,23 @@ mod vec3;
 use camera::Camera;
 use hittable::{Hittable, HittableList, Sphere};
 use ray::Ray;
-use vec3::{Color, Point};
+use vec3::{Color, Point, Vec3};
 
-fn ray_color(r: Ray, world: &HittableList) -> Color {
-    match world.hit(r, 0.0, f64::INFINITY) {
+fn ray_color(r: Ray, world: &HittableList, depth: i32) -> Color {
+    // If we've exceeded the ray bounce limit, return black
+    // since no more light is gathered
+    if depth <= 0 {
+        return Color::new(0.0, 0.0, 0.0);
+    }
+    match world.hit(r, 0.001, f64::INFINITY) {
         Some(hit_record) => {
-            let normal = hit_record.normal;
+            let target = hit_record.p + hit_record.normal + Vec3::random_unit_vector();
+            let ray = Ray {
+                origin: hit_record.p,
+                dir: target - hit_record.p,
+            };
 
-            0.5 * Color::new(normal.x + 1.0, normal.y + 1.0, normal.z + 1.0)
+            0.5 * ray_color(ray, world, depth-1)
         }
         None => {
             let unit_direction = r.dir.unit_vector();
@@ -34,7 +43,8 @@ fn main() -> io::Result<()> {
     let aspect_ratio = 16.0 / 9.0;
     let image_width = 400;
     let image_height = ((image_width as f64) / aspect_ratio) as i32;
-    let samples_per_pixel = 10;
+    let samples_per_pixel = 100;
+    let max_depth = 50;
 
     // World
     let mut world = HittableList::new();
@@ -84,8 +94,7 @@ fn main() -> io::Result<()> {
                 let u = (i as f64 + randu) / (image_width as f64 - 1.0);
                 let v = (j as f64 + randv) / (image_height as f64 - 1.0);
                 let ray = camera.get_ray(u, v);
-                let sample_color = ray_color(ray, &world);
-                color += sample_color;
+                color += ray_color(ray, &world, max_depth);
                 progress.inc(1);
             }
             color.write_color(&mut stdout_hdl, samples_per_pixel)?;

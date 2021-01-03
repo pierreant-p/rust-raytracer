@@ -1,4 +1,5 @@
 use crate::utils::clamp;
+use rand::Rng;
 use std::io::{self, Write};
 use std::ops::{Add, AddAssign, Div, Mul, Neg, Sub};
 
@@ -26,6 +27,36 @@ impl Vec3 {
         self / self.length()
     }
 
+    pub fn random() -> Vec3 {
+        let mut rng = rand::thread_rng();
+
+        Vec3::new(rng.gen(), rng.gen(), rng.gen())
+    }
+
+    pub fn random_range(min: f64, max: f64) -> Vec3 {
+        let mut rng = rand::thread_rng();
+        Vec3::new(
+            rng.gen_range(min..max),
+            rng.gen_range(min..max),
+            rng.gen_range(min..max),
+        )
+    }
+
+    pub fn random_in_unit_sphere() -> Vec3 {
+        let v = loop {
+            let v = Vec3::random_range(-1.0, 1.0);
+            if v.length_squared() < 1.0 {
+                break v;
+            }
+        };
+
+        v
+    }
+
+    pub fn random_unit_vector() -> Vec3 {
+        Vec3::random_in_unit_sphere().unit_vector()
+    }
+
     pub fn dot(&self, other: &Vec3) -> f64 {
         self.x * other.x + self.y * other.y + self.z * other.z
     }
@@ -46,9 +77,10 @@ impl Vec3 {
         // Divide the color by the number of samples
         let scale = 1.0 / (samples_per_pixel as f64);
 
-        let r = self.x * scale;
-        let g = self.y * scale;
-        let b = self.z * scale;
+        // sqrt is for gamma=2.0 gamma-correction
+        let r = (self.x * scale).sqrt();
+        let g = (self.y * scale).sqrt();
+        let b = (self.z * scale).sqrt();
 
         let ir = (256.0 * clamp(r, 0.0, 0.999)) as i32;
         let ig = (256.0 * clamp(g, 0.0, 0.999)) as i32;
@@ -232,12 +264,34 @@ mod tests {
     }
 
     #[test]
-    fn unit_vector() {
+    fn test_unit_vector() {
         let v1 = Vec3::new(2.0, 0.0, 0.0);
         let v2 = v1.unit_vector();
         assert_eq!(v2.x, 1.0);
         assert_eq!(v2.y, 0.0);
         assert_eq!(v2.z, 0.0);
+    }
+
+    #[test]
+    fn test_random() {
+        let v1 = Vec3::random();
+        assert!(0.0 <= v1.x && v1.x < 1.0);
+        assert!(0.0 <= v1.y && v1.y < 1.0);
+        assert!(0.0 <= v1.z && v1.z < 1.0);
+    }
+
+    #[test]
+    fn test_random_range() {
+        let v1 = Vec3::random_range(-2.0, 3.0);
+        assert!(-2.0 <= v1.x && v1.x < 3.0);
+        assert!(-2.0 <= v1.y && v1.y < 3.0);
+        assert!(-2.0 <= v1.z && v1.z < 3.0);
+    }
+
+    #[test]
+    fn test_random_in_unit_sphere() {
+        let v1 = Vec3::random_in_unit_sphere();
+        assert!(v1.length_squared() < 1.0);
     }
 
     #[test]
